@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -29,6 +30,8 @@ interface DeckDisplayProps {
 }
 
 export function DeckDisplay({ deck }: DeckDisplayProps) {
+  const [open, setOpen] = useState(false);
+
   const grouped = SECTION_ORDER.map((section) => ({
     section,
     label: SECTION_LABELS[section],
@@ -42,9 +45,17 @@ export function DeckDisplay({ deck }: DeckDisplayProps) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader
+        className="cursor-pointer select-none"
+        onClick={() => setOpen((v) => !v)}
+      >
         <div className="flex items-center justify-between">
-          <CardTitle>Your Deck</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle>Your Deck</CardTitle>
+            <span className="text-muted-foreground transition-transform duration-200" style={{ display: "inline-block", transform: open ? "rotate(180deg)" : "rotate(0deg)" }}>
+              ▾
+            </span>
+          </div>
           <div className="flex items-center gap-2">
             <Badge variant="secondary">{totalCards} cards</Badge>
             {deck.unresolved.length > 0 && (
@@ -55,8 +66,9 @@ export function DeckDisplay({ deck }: DeckDisplayProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="flex flex-col gap-8">
-        {grouped.map(({ section, label, cards }) => (
+      {open && (
+        <CardContent className="flex flex-col gap-8">
+          {grouped.map(({ section, label, cards }) => (
           <div key={section} className="flex flex-col gap-3">
             <h3 className="text-sm font-medium text-muted-foreground">
               {label} ({cards.reduce((s, c) => s + c.entry.quantity, 0)})
@@ -85,7 +97,8 @@ export function DeckDisplay({ deck }: DeckDisplayProps) {
             </div>
           </div>
         ))}
-      </CardContent>
+        </CardContent>
+      )}
     </Card>
   );
 }
