@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -13,7 +11,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { detectInputType, parseDecklistText } from "@/lib/decklist-parser";
-import type { ParsedDeck, DetectedInput } from "@/lib/types";
 
 const DECKLIST_PLACEHOLDER = `// Commander
 1 Atraxa, Praetors' Voice
@@ -29,14 +26,20 @@ const DECKLIST_PLACEHOLDER = `// Commander
 1 Dovin's Veto`;
 
 interface DecklistInputProps {
-  onParsed: (deck: ParsedDeck, detected: DetectedInput) => void;
+  url: string;
+  onUrlChange: (url: string) => void;
+  decklist: string;
+  onDecklistChange: (decklist: string) => void;
   isLoading?: boolean;
 }
 
-export function DecklistInput({ onParsed, isLoading }: DecklistInputProps) {
-  const [url, setUrl] = useState("");
-  const [decklist, setDecklist] = useState("");
-
+export function DecklistInput({
+  url,
+  onUrlChange,
+  decklist,
+  onDecklistChange,
+  isLoading,
+}: DecklistInputProps) {
   const detectedUrl = url.trim() ? detectInputType(url) : null;
   const hasUrl = detectedUrl?.type === "archidekt-url";
   const hasDecklist = decklist.trim().length > 0;
@@ -46,16 +49,6 @@ export function DecklistInput({ onParsed, isLoading }: DecklistInputProps) {
     const parsed = parseDecklistText(decklist.trim());
     return parsed.entries.reduce((sum, e) => sum + e.quantity, 0);
   })();
-
-  const handleSubmit = useCallback(() => {
-    if (hasUrl) {
-      onParsed({ entries: [], errors: [] }, detectedUrl!);
-    } else if (hasDecklist) {
-      const det = detectInputType(decklist);
-      const parsed = parseDecklistText(det.raw);
-      onParsed(parsed, det);
-    }
-  }, [url, decklist, hasUrl, hasDecklist, detectedUrl, onParsed]);
 
   return (
     <div className="flex w-full flex-col gap-6">
@@ -71,7 +64,7 @@ export function DecklistInput({ onParsed, isLoading }: DecklistInputProps) {
             type="url"
             placeholder="https://archidekt.com/decks/1234567/my_deck"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={(e) => onUrlChange(e.target.value)}
             disabled={isLoading || hasDecklist}
           />
           {hasUrl && (
@@ -105,7 +98,7 @@ export function DecklistInput({ onParsed, isLoading }: DecklistInputProps) {
           <Textarea
             placeholder={DECKLIST_PLACEHOLDER}
             value={decklist}
-            onChange={(e) => setDecklist(e.target.value)}
+            onChange={(e) => onDecklistChange(e.target.value)}
             className="min-h-[300px] font-mono text-sm"
             disabled={isLoading || hasUrl}
           />
@@ -116,15 +109,6 @@ export function DecklistInput({ onParsed, isLoading }: DecklistInputProps) {
           )}
         </CardContent>
       </Card>
-
-      <Button
-        onClick={handleSubmit}
-        disabled={(!hasUrl && !hasDecklist) || isLoading}
-        size="lg"
-        className="w-full"
-      >
-        {isLoading ? "Analyzing..." : "Analyze Deck"}
-      </Button>
     </div>
   );
 }

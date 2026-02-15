@@ -73,6 +73,69 @@ export interface ResolvedDeck {
   unresolved: DeckEntry[];
 }
 
+// --- Recommendation types ---
+
+export type RecommendationCategory =
+  | "ramp"
+  | "removal"
+  | "card_draw"
+  | "board_wipe"
+  | "protection"
+  | "win_condition"
+  | "mana_base"
+  | "synergy"
+  | "general";
+
+export interface CardRecommendation {
+  card_name: string;
+  reason: string;
+  category: RecommendationCategory;
+  replaces?: string;
+}
+
+export interface RecommendationResponse {
+  cuts: CardRecommendation[];
+  additions: CardRecommendation[];
+  mana_base: CardRecommendation[];
+  general_notes: string;
+}
+
+/** A recommendation enriched with Scryfall data after output validation. */
+export interface ValidatedRecommendation {
+  recommendation: CardRecommendation;
+  scryfall: ScryfallCard | null;
+}
+
+export interface ValidatedRecommendationResponse {
+  cuts: ValidatedRecommendation[];
+  additions: ValidatedRecommendation[];
+  mana_base: ValidatedRecommendation[];
+  general_notes: string;
+}
+
+export type PowerLevel = "casual" | "focused" | "optimized" | "cedh";
+export type BudgetLevel = "no_limit" | "under_50" | "under_25" | "under_5" | "under_1";
+
+export interface UserContext {
+  powerLevel?: PowerLevel;
+  budget?: BudgetLevel;
+  strategy?: string;
+  /** Cards the user doesn't want cut. */
+  petCards?: string[];
+}
+
+// --- Deck analysis (computed server-side for prompt enrichment) ---
+
+export interface DeckAnalysis {
+  commanderName: string | null;
+  colorIdentity: string[];
+  totalCards: number;
+  manaCurve: Record<string, number>;
+  typeDistribution: Record<string, number>;
+  landCount: number;
+  rampCount: number;
+}
+
 // --- Input types ---
 
 export type InputType = "text" | "archidekt-url";
