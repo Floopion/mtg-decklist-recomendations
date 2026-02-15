@@ -10,13 +10,15 @@ import type {
   CardRecommendation,
   ValidatedRecommendation,
   ValidatedRecommendationResponse,
+  ResolvedDeck,
 } from "@/lib/types";
 
-export const runtime = "edge";
+export const maxDuration = 60;
 
 interface RecommendRequest {
   input: string;
   context?: UserContext;
+  resolvedDeck?: ResolvedDeck;
 }
 
 /**
@@ -55,49 +57,49 @@ export async function POST(request: Request) {
   try {
     const body: RecommendRequest = await request.json();
 
-    if (!body.input || typeof body.input !== "string") {
+    // Use pre-resolved deck from client if available (skips duplicate Scryfall work)
+    let resolvedDeck: ResolvedDeck;
+
+    if (body.resolvedDeck && body.resolvedDeck.cards?.length > 0) {
+      resolvedDeck = body.resolvedDeck;
+    } else if (body.input && typeof body.input === "string") {
+      const sanitized = sanitizeDecklistInput(body.input);
+      const detected = detectInputType(sanitized);
+
+      let entries: DeckEntry[];
+
+      if (detected.type === "archidekt-url" && detected.deckId) {
+        try {
+          const archidekt = await fetchArchidektDeck(detected.deckId);
+          entries = archidekt.entries;
+        } catch (err) {
+          const message =
+            err instanceof ArchidektError
+              ? err.message
+              : "Failed to fetch deck from Archidekt";
+          return NextResponse.json({ error: message }, { status: 502 });
+        }
+      } else {
+        const parsed = parseDecklistText(sanitized);
+        entries = parsed.entries;
+
+        if (entries.length === 0) {
+          return NextResponse.json(
+            { error: "No valid card entries found in input" },
+            { status: 400 },
+          );
+        }
+      }
+
+      resolvedDeck = await resolveCards(entries);
+    } else {
       return NextResponse.json(
-        { error: "Missing or invalid 'input' field" },
+        { error: "Missing input or resolvedDeck" },
         { status: 400 },
       );
     }
 
-    // 1. Sanitize input
-    const sanitized = sanitizeDecklistInput(body.input);
-    const detected = detectInputType(sanitized);
-
-    // 2. Get card entries
-    let entries: DeckEntry[];
-    let deckName: string | undefined;
-
-    if (detected.type === "archidekt-url" && detected.deckId) {
-      try {
-        const archidekt = await fetchArchidektDeck(detected.deckId);
-        entries = archidekt.entries;
-        deckName = archidekt.name;
-      } catch (err) {
-        const message =
-          err instanceof ArchidektError
-            ? err.message
-            : "Failed to fetch deck from Archidekt";
-        return NextResponse.json({ error: message }, { status: 502 });
-      }
-    } else {
-      const parsed = parseDecklistText(sanitized);
-      entries = parsed.entries;
-
-      if (entries.length === 0) {
-        return NextResponse.json(
-          { error: "No valid card entries found in input" },
-          { status: 400 },
-        );
-      }
-    }
-
-    // 3. Resolve all cards against Scryfall (input grounding)
-    const resolvedDeck = await resolveCards(entries);
-
-    // 4. Get recommendations from Gemini
+    // Get recommendations from Gemini
     const rawRecs = await getRecommendations(resolvedDeck, body.context);
 
     // 5. Validate all recommended card names against Scryfall (output validation)
@@ -108,8 +110,7 @@ export async function POST(request: Request) {
         validateRecommendations(rawRecs.mana_base ?? []),
       ]);
 
-    const response: ValidatedRecommendationResponse & { deckName?: string } = {
-      deckName,
+    const response: ValidatedRecommendationResponse = {
       cuts: validatedCuts,
       additions: validatedAdditions,
       mana_base: validatedManaBase,
