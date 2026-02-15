@@ -71,6 +71,10 @@ export default function Home() {
         body: JSON.stringify({
           input: detected.raw,
           context: userContext,
+          resolvedDeck: {
+            cards: resolveData.cards,
+            unresolved: resolveData.unresolved,
+          },
         }),
       });
 
