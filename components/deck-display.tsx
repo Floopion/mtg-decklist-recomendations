@@ -7,7 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { ParsedDeck, DeckSection } from "@/lib/types";
+import { CardPreview } from "@/components/card-preview";
+import type { ResolvedDeck, DeckSection } from "@/lib/types";
 
 const SECTION_LABELS: Record<DeckSection, string> = {
   commander: "Commander",
@@ -24,64 +25,66 @@ const SECTION_ORDER: DeckSection[] = [
 ];
 
 interface DeckDisplayProps {
-  deck: ParsedDeck;
+  deck: ResolvedDeck;
 }
 
 export function DeckDisplay({ deck }: DeckDisplayProps) {
   const grouped = SECTION_ORDER.map((section) => ({
     section,
     label: SECTION_LABELS[section],
-    entries: deck.entries.filter((e) => e.section === section),
-  })).filter((g) => g.entries.length > 0);
+    cards: deck.cards.filter((c) => c.entry.section === section),
+  })).filter((g) => g.cards.length > 0);
 
-  const totalCards = deck.entries.reduce((sum, e) => sum + e.quantity, 0);
+  const totalCards = deck.cards.reduce(
+    (sum, c) => sum + c.entry.quantity,
+    0,
+  );
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Parsed Deck</CardTitle>
-          <Badge variant="secondary">{totalCards} cards</Badge>
+          <CardTitle>Your Deck</CardTitle>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">{totalCards} cards</Badge>
+            {deck.unresolved.length > 0 && (
+              <Badge variant="destructive">
+                {deck.unresolved.length} not found
+              </Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
-      <CardContent className="flex flex-col gap-6">
-        {grouped.map(({ section, label, entries }) => (
-          <div key={section} className="flex flex-col gap-1">
+      <CardContent className="flex flex-col gap-8">
+        {grouped.map(({ section, label, cards }) => (
+          <div key={section} className="flex flex-col gap-3">
             <h3 className="text-sm font-medium text-muted-foreground">
-              {label} ({entries.reduce((s, e) => s + e.quantity, 0)})
+              {label} ({cards.reduce((s, c) => s + c.entry.quantity, 0)})
             </h3>
-            <ul className="flex flex-col gap-0.5">
-              {entries.map((entry, i) => (
-                <li
-                  key={`${entry.cardName}-${i}`}
-                  className="flex items-center gap-2 text-sm"
-                >
-                  <span className="w-6 text-right font-mono text-muted-foreground">
-                    {entry.quantity}
-                  </span>
-                  <span>{entry.cardName}</span>
-                </li>
-              ))}
-            </ul>
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
+              {cards.map((resolved, i) =>
+                resolved.scryfall ? (
+                  <CardPreview
+                    key={`${resolved.entry.cardName}-${i}`}
+                    card={resolved.scryfall}
+                    quantity={resolved.entry.quantity}
+                  />
+                ) : (
+                  <div
+                    key={`${resolved.entry.cardName}-${i}`}
+                    className="flex aspect-[488/680] items-center justify-center rounded-lg border border-dashed p-2 text-center text-xs text-muted-foreground"
+                  >
+                    <span>
+                      {resolved.entry.quantity}x {resolved.entry.cardName}
+                      <br />
+                      <span className="text-destructive">Not found</span>
+                    </span>
+                  </div>
+                ),
+              )}
+            </div>
           </div>
         ))}
-
-        {deck.errors.length > 0 && (
-          <div className="flex flex-col gap-1">
-            <h3 className="text-sm font-medium text-destructive">
-              Parse Errors ({deck.errors.length})
-            </h3>
-            <ul className="flex flex-col gap-0.5">
-              {deck.errors.map((err, i) => (
-                <li key={i} className="text-sm text-muted-foreground">
-                  <span className="font-mono">Line {err.line}:</span>{" "}
-                  <span className="text-destructive">{err.text}</span>
-                  <span className="ml-2 text-xs">— {err.reason}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
