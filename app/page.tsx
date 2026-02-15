@@ -15,7 +15,7 @@ export default function Home() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-4xl flex-col gap-8 px-4 py-12">
+    <div className="mx-auto flex min-h-screen max-w-2xl flex-col gap-8 px-4 py-12">
       <header className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">
           MTG Decklist Recommendations
@@ -26,20 +26,18 @@ export default function Home() {
         </p>
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-2">
-        <DecklistInput onParsed={handleParsed} />
+      <DecklistInput onParsed={handleParsed} />
 
-        {parsedDeck && detected?.type === "text" && parsedDeck.entries.length > 0 && (
-          <DeckDisplay deck={parsedDeck} />
-        )}
+      {parsedDeck && detected?.type === "text" && parsedDeck.entries.length > 0 && (
+        <DeckDisplay deck={parsedDeck} />
+      )}
 
-        {detected?.type === "archidekt-url" && (
-          <div className="flex items-center justify-center rounded-xl border border-dashed p-8 text-sm text-muted-foreground">
-            Archidekt import for deck #{detected.deckId} will be fetched
-            server-side when you analyze.
-          </div>
-        )}
-      </div>
+      {detected?.type === "archidekt-url" && (
+        <div className="flex items-center justify-center rounded-xl border border-dashed p-8 text-sm text-muted-foreground">
+          Archidekt import for deck #{detected.deckId} will be fetched
+          server-side when you analyze.
+        </div>
+      )}
     </div>
   );
 }
