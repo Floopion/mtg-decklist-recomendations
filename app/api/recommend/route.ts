@@ -4,6 +4,7 @@ import { fetchArchidektDeck, ArchidektError } from "@/lib/archidekt";
 import { sanitizeDecklistInput } from "@/lib/validators";
 import { parseDecklistText, detectInputType } from "@/lib/decklist-parser";
 import { getRecommendations } from "@/lib/gemini";
+import { checkRateLimit, rateLimitResponse } from "@/lib/ratelimit";
 import type {
   DeckEntry,
   UserContext,
@@ -54,6 +55,10 @@ async function validateRecommendations(
 }
 
 export async function POST(request: Request) {
+  // Rate limit check
+  const rl = await checkRateLimit(request);
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   try {
     const body: RecommendRequest = await request.json();
 

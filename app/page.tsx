@@ -26,11 +26,13 @@ export default function Home() {
   const [userContext, setUserContext] = useState<UserContext>({});
   const [loadingPhase, setLoadingPhase] = useState<LoadingPhase>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
 
   const detectedUrl = url.trim() ? detectInputType(url) : null;
   const hasUrl = detectedUrl?.type === "archidekt-url";
   const hasDecklist = decklist.trim().length > 0;
-  const canSubmit = hasUrl || hasDecklist;
+  const isCoolingDown = cooldownUntil !== null && Date.now() < cooldownUntil;
+  const canSubmit = (hasUrl || hasDecklist) && !isCoolingDown;
 
   async function handleSubmit() {
     const detected = hasUrl ? detectedUrl! : detectInputType(decklist);
@@ -52,6 +54,12 @@ export default function Home() {
       const resolveData = await resolveRes.json();
 
       if (!resolveRes.ok) {
+        if (resolveRes.status === 429) {
+          const retryAfter = resolveRes.headers.get("Retry-After");
+          const seconds = retryAfter ? parseInt(retryAfter, 10) : 60;
+          setCooldownUntil(Date.now() + seconds * 1000);
+          setTimeout(() => setCooldownUntil(null), seconds * 1000);
+        }
         setError(resolveData.error ?? "Failed to resolve cards");
         return;
       }
@@ -81,6 +89,12 @@ export default function Home() {
       const recData = await recRes.json();
 
       if (!recRes.ok) {
+        if (recRes.status === 429) {
+          const retryAfter = recRes.headers.get("Retry-After");
+          const seconds = retryAfter ? parseInt(retryAfter, 10) : 60;
+          setCooldownUntil(Date.now() + seconds * 1000);
+          setTimeout(() => setCooldownUntil(null), seconds * 1000);
+        }
         setError(recData.error ?? "Failed to get recommendations");
         return;
       }

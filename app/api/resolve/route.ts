@@ -3,6 +3,7 @@ import { resolveCards } from "@/lib/scryfall";
 import { fetchArchidektDeck, ArchidektError } from "@/lib/archidekt";
 import { sanitizeDecklistInput } from "@/lib/validators";
 import { parseDecklistText, detectInputType } from "@/lib/decklist-parser";
+import { checkRateLimit, rateLimitResponse } from "@/lib/ratelimit";
 import type { DeckEntry } from "@/lib/types";
 
 export const runtime = "edge";
@@ -12,6 +13,10 @@ interface ResolveRequest {
 }
 
 export async function POST(request: Request) {
+  // Rate limit check
+  const rl = await checkRateLimit(request);
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   try {
     const body: ResolveRequest = await request.json();
 
