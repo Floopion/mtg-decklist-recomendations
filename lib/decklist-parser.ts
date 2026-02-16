@@ -1,7 +1,7 @@
 import type { DeckEntry, DeckSection, ParsedDeck, DetectedInput } from "./types";
 
 const ARCHIDEKT_URL_PATTERN =
-  /^https?:\/\/(?:www\.)?archidekt\.com\/decks\/(\d+)/;
+  /^https?:\/\/(?:www\.)?archidekt\.com\/decks\/(\d+)(?:[/?#]|$)/;
 
 const CARD_LINE_PATTERN = /^(\d+)x?\s+(.+)$/;
 

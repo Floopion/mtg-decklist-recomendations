@@ -3,9 +3,15 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCardImageUri } from "@/lib/scryfall";
 import type { ValidatedRecommendation } from "@/lib/types";
+
+/** Build the MTG Singles store logo URL from the store ID (e.g. "BayDragon" → "/assets/images/stores/NZ/BayDragon.webp") */
+function storeImageUrl(store: string): string {
+  return `https://www.mtgsingles.co.nz/assets/images/stores/NZ/${store}.webp`;
+}
 
 const CATEGORY_LABELS: Record<string, string> = {
   ramp: "Ramp",
@@ -26,6 +32,7 @@ interface RecommendationCardProps {
 
 export function RecommendationCard({ rec, type }: RecommendationCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const imageUrl = rec.scryfall
     ? getCardImageUri(rec.scryfall, "normal")
     : null;
@@ -34,7 +41,11 @@ export function RecommendationCard({ rec, type }: RecommendationCardProps) {
     CATEGORY_LABELS[rec.recommendation.category] ?? rec.recommendation.category;
 
   return (
-    <div className="flex gap-3 rounded-lg border p-3">
+    <div
+      className="relative flex gap-3 rounded-lg border p-3"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       {/* Card image thumbnail */}
       <div className="relative h-[100px] w-[72px] shrink-0 overflow-hidden rounded">
         {imageUrl ? (
@@ -54,6 +65,19 @@ export function RecommendationCard({ rec, type }: RecommendationCardProps) {
         ) : (
           <div className="flex h-full items-center justify-center rounded bg-muted text-[10px] text-muted-foreground">
             No image
+          </div>
+        )}
+
+        {/* Hover preview — anchored to thumbnail */}
+        {hovered && imageLoaded && imageUrl && (
+          <div className="pointer-events-none absolute bottom-0 left-[calc(100%+8px)] z-50 w-[250px] overflow-hidden rounded-lg border bg-background shadow-xl">
+            <Image
+              src={imageUrl}
+              alt={rec.recommendation.card_name}
+              width={250}
+              height={349}
+              className="block"
+            />
           </div>
         )}
       </div>
@@ -89,11 +113,32 @@ export function RecommendationCard({ rec, type }: RecommendationCardProps) {
           </p>
         )}
 
-        {rec.scryfall?.prices.usd && (
-          <p className="text-xs text-muted-foreground">
-            ${rec.scryfall.prices.usd}
-          </p>
-        )}
+        {/* Prices row */}
+        <div className="mt-auto flex items-center justify-between">
+          {rec.scryfall?.prices.usd && (
+            <span className="text-xs text-muted-foreground">
+              US ${rec.scryfall.prices.usd}
+            </span>
+          )}
+
+          {rec.nzPrice && (
+            <Button variant="ghost" size="xs" className="bg-white/40" asChild>
+              <a
+                href={rec.nzPrice.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={storeImageUrl(rec.nzPrice.store)}
+                  alt={rec.nzPrice.store}
+                  className="h-5 w-[40px] shrink-0 rounded object-contain object-center"
+                />
+                {rec.nzPrice.price}
+              </a>
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
