@@ -60,13 +60,26 @@ export function DecklistInput({
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
-          <Input
-            type="url"
-            placeholder="https://archidekt.com/decks/1234567/my_deck"
-            value={url}
-            onChange={(e) => onUrlChange(e.target.value)}
-            disabled={isLoading || hasDecklist}
-          />
+          <div className="relative">
+            <Input
+              type="url"
+              placeholder="https://archidekt.com/decks/1234567/my_deck"
+              value={url}
+              onChange={(e) => onUrlChange(e.target.value)}
+              disabled={isLoading || hasDecklist}
+              className={url ? "pr-8" : ""}
+            />
+            {url && !isLoading && (
+              <button
+                type="button"
+                onClick={() => onUrlChange("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear URL"
+              >
+                ✕
+              </button>
+            )}
+          </div>
           {hasUrl && (
             <Badge variant="outline" className="w-fit">
               Archidekt deck #{detectedUrl!.deckId}
@@ -95,13 +108,25 @@ export function DecklistInput({
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
-          <Textarea
-            placeholder={DECKLIST_PLACEHOLDER}
-            value={decklist}
-            onChange={(e) => onDecklistChange(e.target.value)}
-            className="min-h-[300px] font-mono text-sm"
-            disabled={isLoading || hasUrl}
-          />
+          <div className="relative">
+            <Textarea
+              placeholder={DECKLIST_PLACEHOLDER}
+              value={decklist}
+              onChange={(e) => onDecklistChange(e.target.value)}
+              className="min-h-[300px] font-mono text-sm"
+              disabled={isLoading || hasUrl}
+            />
+            {hasDecklist && !isLoading && (
+              <button
+                type="button"
+                onClick={() => onDecklistChange("")}
+                className="absolute right-2 top-2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear decklist"
+              >
+                ✕
+              </button>
+            )}
+          </div>
           {hasDecklist && (
             <Badge variant="outline" className="w-fit">
               {cardCount} cards detected

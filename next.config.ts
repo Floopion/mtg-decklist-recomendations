@@ -44,7 +44,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' cards.scryfall.io data:",
+              "img-src 'self' cards.scryfall.io www.mtgsingles.co.nz data:",
               "font-src 'self'",
               "connect-src 'self' api.scryfall.com",
               "frame-ancestors 'none'",

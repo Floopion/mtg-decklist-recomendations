@@ -5,6 +5,7 @@ import { sanitizeDecklistInput } from "@/lib/validators";
 import { parseDecklistText, detectInputType } from "@/lib/decklist-parser";
 import { getRecommendations } from "@/lib/gemini";
 import { checkRateLimit, rateLimitResponse } from "@/lib/ratelimit";
+import { lookupNzPrice } from "@/lib/mtgsingles";
 import type {
   DeckEntry,
   UserContext,
@@ -12,6 +13,7 @@ import type {
   ValidatedRecommendation,
   ValidatedRecommendationResponse,
   ResolvedDeck,
+  NzPriceInfo,
 } from "@/lib/types";
 
 export const maxDuration = 60;
@@ -115,10 +117,52 @@ export async function POST(request: Request) {
         validateRecommendations(rawRecs.mana_base ?? []),
       ]);
 
+    // Look up NZ prices for additions and mana base (not cuts)
+    // Feature-flagged: set ENABLE_NZ_PRICES=true to enable
+    const nzEnabled = process.env.ENABLE_NZ_PRICES === "true";
+    const nzPriceMap = new Map<string, NzPriceInfo | null>();
+
+    if (nzEnabled) {
+      const cardsToPrice = [...validatedAdditions, ...validatedManaBase];
+      if (cardsToPrice.length > 0) {
+        console.log(`[NZ] Looking up ${cardsToPrice.length} cards...`);
+        const results = await Promise.allSettled(
+          cardsToPrice.map((v) => lookupNzPrice(v.recommendation.card_name)),
+        );
+        for (const result of results) {
+          if (result.status === "fulfilled") {
+            nzPriceMap.set(
+              result.value.cardName.toLowerCase(),
+              result.value.cheapest
+                ? {
+                    store: result.value.cheapest.store,
+                    price: result.value.cheapest.price,
+                    url: result.value.cheapest.url,
+                    condition: result.value.cheapest.condition,
+                  }
+                : null,
+            );
+          }
+        }
+        console.log(
+          `[NZ] Done. ${nzPriceMap.size} results, ${[...nzPriceMap.values()].filter(Boolean).length} found`,
+        );
+      }
+    }
+
+    const attachNzPrices = (
+      recs: ValidatedRecommendation[],
+    ): ValidatedRecommendation[] =>
+      recs.map((r) => ({
+        ...r,
+        nzPrice:
+          nzPriceMap.get(r.recommendation.card_name.toLowerCase()) ?? null,
+      }));
+
     const response: ValidatedRecommendationResponse = {
       cuts: validatedCuts,
-      additions: validatedAdditions,
-      mana_base: validatedManaBase,
+      additions: attachNzPrices(validatedAdditions),
+      mana_base: attachNzPrices(validatedManaBase),
       general_notes: rawRecs.general_notes ?? "",
     };
 

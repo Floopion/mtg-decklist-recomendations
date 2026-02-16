@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -8,9 +9,61 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { RecommendationCard } from "@/components/recommendation-card";
-import type { ValidatedRecommendationResponse } from "@/lib/types";
+import type { ValidatedRecommendation, ValidatedRecommendationResponse } from "@/lib/types";
+
+interface CollapsibleSectionProps {
+  title: string;
+  count: number;
+  badgeVariant: "destructive" | "secondary";
+  items: ValidatedRecommendation[];
+  type: "cut" | "addition" | "mana_base";
+  defaultOpen?: boolean;
+}
+
+function CollapsibleSection({
+  title,
+  count,
+  badgeVariant,
+  items,
+  type,
+  defaultOpen = true,
+}: CollapsibleSectionProps) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  if (items.length === 0) return null;
+
+  return (
+    <section className="flex flex-col gap-3">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex cursor-pointer items-center gap-2 select-none"
+      >
+        <span
+          className="text-muted-foreground transition-transform duration-200"
+          style={{
+            display: "inline-block",
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+          }}
+        >
+          ▾
+        </span>
+        <h3 className="text-sm font-semibold">{title}</h3>
+        <Badge variant={badgeVariant} className="text-[10px]">
+          {count}
+        </Badge>
+      </button>
+      {open && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {items.map((rec, i) => (
+            <RecommendationCard key={i} rec={rec} type={type} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
 
 interface RecommendationsDisplayProps {
   data: ValidatedRecommendationResponse;
@@ -41,60 +94,29 @@ export function RecommendationsDisplay({ data }: RecommendationsDisplayProps) {
           </div>
         )}
 
-        {/* Cuts */}
-        {data.cuts.length > 0 && (
-          <section className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold">Suggested Cuts</h3>
-              <Badge variant="destructive" className="text-[10px]">
-                {data.cuts.length}
-              </Badge>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {data.cuts.map((rec, i) => (
-                <RecommendationCard key={i} rec={rec} type="cut" />
-              ))}
-            </div>
-          </section>
-        )}
+        <CollapsibleSection
+          title="Suggested Cuts"
+          count={data.cuts.length}
+          badgeVariant="destructive"
+          items={data.cuts}
+          type="cut"
+        />
 
-        {data.cuts.length > 0 && data.additions.length > 0 && <Separator />}
+        <CollapsibleSection
+          title="Suggested Additions"
+          count={data.additions.length}
+          badgeVariant="secondary"
+          items={data.additions}
+          type="addition"
+        />
 
-        {/* Additions */}
-        {data.additions.length > 0 && (
-          <section className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold">Suggested Additions</h3>
-              <Badge variant="secondary" className="text-[10px]">
-                {data.additions.length}
-              </Badge>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {data.additions.map((rec, i) => (
-                <RecommendationCard key={i} rec={rec} type="addition" />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {data.mana_base.length > 0 && (
-          <>
-            <Separator />
-            <section className="flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold">Mana Base</h3>
-                <Badge variant="secondary" className="text-[10px]">
-                  {data.mana_base.length}
-                </Badge>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {data.mana_base.map((rec, i) => (
-                  <RecommendationCard key={i} rec={rec} type="mana_base" />
-                ))}
-              </div>
-            </section>
-          </>
-        )}
+        <CollapsibleSection
+          title="Mana Base"
+          count={data.mana_base.length}
+          badgeVariant="secondary"
+          items={data.mana_base}
+          type="mana_base"
+        />
 
         {/* Disclaimer */}
         <p className="text-[11px] text-muted-foreground">

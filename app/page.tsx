@@ -16,6 +16,14 @@ import type {
 
 type LoadingPhase = "resolving" | "analyzing" | null;
 
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+      {message}
+    </div>
+  );
+}
+
 export default function Home() {
   const [url, setUrl] = useState("");
   const [decklist, setDecklist] = useState("");
@@ -25,7 +33,8 @@ export default function Home() {
   const [deckName, setDeckName] = useState<string | null>(null);
   const [userContext, setUserContext] = useState<UserContext>({});
   const [loadingPhase, setLoadingPhase] = useState<LoadingPhase>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [resolveError, setResolveError] = useState<string | null>(null);
+  const [recommendError, setRecommendError] = useState<string | null>(null);
   const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
 
   const detectedUrl = url.trim() ? detectInputType(url) : null;
@@ -34,11 +43,19 @@ export default function Home() {
   const isCoolingDown = cooldownUntil !== null && Date.now() < cooldownUntil;
   const canSubmit = (hasUrl || hasDecklist) && !isCoolingDown;
 
+  function handleCooldown(res: Response) {
+    const retryAfter = res.headers.get("Retry-After");
+    const seconds = retryAfter ? parseInt(retryAfter, 10) : 60;
+    setCooldownUntil(Date.now() + seconds * 1000);
+    setTimeout(() => setCooldownUntil(null), seconds * 1000);
+  }
+
   async function handleSubmit() {
     const detected = hasUrl ? detectedUrl! : detectInputType(decklist);
 
     setLoadingPhase("resolving");
-    setError(null);
+    setResolveError(null);
+    setRecommendError(null);
     setResolvedDeck(null);
     setRecommendations(null);
     setDeckName(null);
@@ -54,13 +71,8 @@ export default function Home() {
       const resolveData = await resolveRes.json();
 
       if (!resolveRes.ok) {
-        if (resolveRes.status === 429) {
-          const retryAfter = resolveRes.headers.get("Retry-After");
-          const seconds = retryAfter ? parseInt(retryAfter, 10) : 60;
-          setCooldownUntil(Date.now() + seconds * 1000);
-          setTimeout(() => setCooldownUntil(null), seconds * 1000);
-        }
-        setError(resolveData.error ?? "Failed to resolve cards");
+        if (resolveRes.status === 429) handleCooldown(resolveRes);
+        setResolveError(resolveData.error ?? "Failed to resolve cards");
         return;
       }
 
@@ -89,19 +101,14 @@ export default function Home() {
       const recData = await recRes.json();
 
       if (!recRes.ok) {
-        if (recRes.status === 429) {
-          const retryAfter = recRes.headers.get("Retry-After");
-          const seconds = retryAfter ? parseInt(retryAfter, 10) : 60;
-          setCooldownUntil(Date.now() + seconds * 1000);
-          setTimeout(() => setCooldownUntil(null), seconds * 1000);
-        }
-        setError(recData.error ?? "Failed to get recommendations");
+        if (recRes.status === 429) handleCooldown(recRes);
+        setRecommendError(recData.error ?? "Failed to get recommendations");
         return;
       }
 
       setRecommendations(recData);
     } catch {
-      setError("Failed to connect to the server");
+      setResolveError("Failed to connect to the server");
     } finally {
       setLoadingPhase(null);
     }
@@ -144,13 +151,7 @@ export default function Home() {
         {isLoading ? "Analyzing..." : "Analyze Deck"}
       </Button>
 
-      {error && (
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-          {error}
-        </div>
-      )}
-
-      {/* Loading states */}
+      {/* Resolve loading */}
       {loadingPhase === "resolving" && (
         <div className="flex flex-col gap-3">
           <p className="text-sm text-muted-foreground">
@@ -164,6 +165,19 @@ export default function Home() {
         </div>
       )}
 
+      {/* Resolve error — above deck */}
+      {resolveError && <ErrorBanner message={resolveError} />}
+
+      {deckName && !isLoading && (
+        <p className="text-sm text-muted-foreground">
+          Imported:{" "}
+          <span className="font-medium text-foreground">{deckName}</span>
+        </p>
+      )}
+
+      {resolvedDeck && !isLoading && <DeckDisplay deck={resolvedDeck} />}
+
+      {/* Recommend loading */}
       {loadingPhase === "analyzing" && (
         <div className="flex flex-col gap-3">
           <p className="text-sm text-muted-foreground">
@@ -177,14 +191,8 @@ export default function Home() {
         </div>
       )}
 
-      {deckName && !isLoading && (
-        <p className="text-sm text-muted-foreground">
-          Imported:{" "}
-          <span className="font-medium text-foreground">{deckName}</span>
-        </p>
-      )}
-
-      {resolvedDeck && !isLoading && <DeckDisplay deck={resolvedDeck} />}
+      {/* Recommend error — above recommendations */}
+      {recommendError && <ErrorBanner message={recommendError} />}
 
       {recommendations && !isLoading && (
         <RecommendationsDisplay data={recommendations} />

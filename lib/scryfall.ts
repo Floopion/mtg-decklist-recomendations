@@ -4,6 +4,16 @@ const SCRYFALL_API = "https://api.scryfall.com";
 const BATCH_SIZE = 75; // Scryfall's max per /cards/collection request
 const REQUEST_DELAY_MS = 100; // stay well under 10 req/sec
 
+/**
+ * Extract the front face name from a double-faced card.
+ * Archidekt returns DFC names as "Front // Back" — Scryfall's collection
+ * endpoint resolves fine with just the front face name.
+ */
+function frontFaceName(name: string): string {
+  const idx = name.indexOf(" // ");
+  return idx === -1 ? name : name.slice(0, idx);
+}
+
 interface CollectionRequestIdentifier {
   name: string;
 }
@@ -37,7 +47,7 @@ export async function resolveCards(
 
     const batch = uniqueNames.slice(i, i + BATCH_SIZE);
     const identifiers: CollectionRequestIdentifier[] = batch.map((name) => ({
-      name,
+      name: frontFaceName(name),
     }));
 
     const res = await fetch(`${SCRYFALL_API}/cards/collection`, {
@@ -53,8 +63,9 @@ export async function resolveCards(
     const data: CollectionResponse = await res.json();
 
     for (const card of data.data) {
-      // Scryfall returns the oracle name, which handles multi-face cards
+      // Store under the full name AND the front face so DFC lookups match
       cardMap.set(card.name.toLowerCase(), card);
+      cardMap.set(frontFaceName(card.name).toLowerCase(), card);
     }
 
     for (const nf of data.not_found) {
@@ -67,7 +78,10 @@ export async function resolveCards(
   const unresolved: DeckEntry[] = [];
 
   for (const entry of entries) {
-    const scryfall = cardMap.get(entry.cardName.toLowerCase()) ?? null;
+    const scryfall =
+      cardMap.get(entry.cardName.toLowerCase()) ??
+      cardMap.get(frontFaceName(entry.cardName).toLowerCase()) ??
+      null;
     if (scryfall) {
       cards.push({ entry, scryfall });
     } else {

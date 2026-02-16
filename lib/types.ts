@@ -100,10 +100,18 @@ export interface RecommendationResponse {
   general_notes: string;
 }
 
+export interface NzPriceInfo {
+  store: string;
+  price: string;
+  url: string;
+  condition: string;
+}
+
 /** A recommendation enriched with Scryfall data after output validation. */
 export interface ValidatedRecommendation {
   recommendation: CardRecommendation;
   scryfall: ScryfallCard | null;
+  nzPrice?: NzPriceInfo | null;
 }
 
 export interface ValidatedRecommendationResponse {
