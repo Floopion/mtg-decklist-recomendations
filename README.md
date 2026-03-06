@@ -51,7 +51,9 @@ cp .env.example .env.local  # then fill in your API keys
 npm run dev
 ```
 
-Open [http://localhost:3000/mtg-rag](http://localhost:3000/mtg-rag) (note the basePath).
+Open [http://localhost:3000/mtg-rag](http://localhost:3000/mtg-rag).
+
+> **Note:** The `basePath: '/mtg-rag'` in `next.config.ts` means all routes are prefixed. This is required for the portfolio integration. If you want to run this app standalone at `localhost:3000/`, comment out the `basePath` line in `next.config.ts`.
 
 ## Environment Variables
 
