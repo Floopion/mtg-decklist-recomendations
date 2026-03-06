@@ -8,20 +8,22 @@ This is an AI-assisted side project — the entire codebase is built collaborati
 
 ## Architecture — Micro-Frontend Zone
 
-This app is deployed as an **independent micro-frontend** served through a portfolio shell via [Next.js Multi-Zones](https://nextjs.org/docs/app/building-your-application/deploying/multi-zones). It runs as its own Vercel project with `basePath: '/mtg-rag'` and is proxied through the portfolio's rewrite rules.
+This app is deployed as an **independent micro-frontend** composed into a portfolio shell via [Vercel Microfrontends](https://vercel.com/docs/workflow-collaboration/microfrontends). Both projects belong to the same Vercel Microfrontends group — Vercel handles routing at the edge, no manual rewrites needed.
 
 ```
 Portfolio Shell (dbedford.dev)
 ├── /                  ← portfolio routes
 ├── /blog/*            ← blog routes
 ├── /projects/*        ← project write-ups
-└── /mtg-rag/*         ← ⬅ rewrites to this app
+└── /mtg-rag/*         ← routed to this app by Vercel
 ```
 
 This pattern means:
 - **Independently deployable** — this app has its own CI/CD, env vars, and release cycle
 - **Self-contained** — all API routes, components, and state live in this repo
-- **Composable** — the portfolio shell can add new project MFEs with a single rewrite rule
+- **Composable** — new project MFEs join the group with zero code changes to the shell
+
+The `basePath: '/mtg-rag'` in `next.config.ts` ensures all routes, assets, and API calls work correctly under the portfolio's path prefix.
 
 ## What It Does
 
@@ -39,7 +41,7 @@ Under the hood, every card is resolved against the [Scryfall API](https://scryfa
 - **Scryfall API** — card data, images, pricing, legality
 - **Gemini 2.0 Flash** — deck analysis and recommendations (server-side only)
 - **Upstash Redis** — rate limiting
-- **Vercel Multi-Zones** — micro-frontend composition with the portfolio shell
+- **Vercel Microfrontends** — edge-routed composition with the portfolio shell
 
 ## Getting Started
 
