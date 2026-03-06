@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  basePath: "/mtg-rag",
   images: {
     remotePatterns: [
       {
@@ -14,10 +15,6 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: [
-          {
-            key: "X-Frame-Options",
-            value: "DENY",
-          },
           {
             key: "X-Content-Type-Options",
             value: "nosniff",
@@ -47,7 +44,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' cards.scryfall.io www.mtgsingles.co.nz data:",
               "font-src 'self'",
               "connect-src 'self' api.scryfall.com",
-              "frame-ancestors 'none'",
+              "frame-ancestors 'self'",
             ].join("; "),
           },
         ],
