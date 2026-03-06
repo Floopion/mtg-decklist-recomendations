@@ -8,6 +8,7 @@ import { RecommendationsDisplay } from "@/components/recommendations-display";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { detectInputType } from "@/lib/decklist-parser";
+import { basePath } from "@/lib/config";
 import type {
   ResolvedDeck,
   UserContext,
@@ -62,7 +63,7 @@ export default function Home() {
 
     try {
       // Step 1: Resolve cards
-      const resolveRes = await fetch("/api/resolve", {
+      const resolveRes = await fetch(`${basePath}/api/resolve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ input: detected.raw }),
@@ -85,7 +86,7 @@ export default function Home() {
       // Step 2: Get recommendations
       setLoadingPhase("analyzing");
 
-      const recRes = await fetch("/api/recommend", {
+      const recRes = await fetch(`${basePath}/api/recommend`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
