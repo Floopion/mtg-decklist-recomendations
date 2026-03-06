@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { lookupNzPrice } from "@/lib/mtgsingles";
 import { checkRateLimit, rateLimitResponse } from "@/lib/ratelimit";
 
-export const runtime = "edge";
-
 interface NzPriceRequest {
   cardName: string;
 }
