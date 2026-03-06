@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Link from "next/link";
+import { ThemeSync } from "@/components/theme-sync";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background font-sans text-foreground antialiased`}
       >
@@ -36,22 +36,23 @@ export default function RootLayout({
             aria-label="Primary navigation"
             className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4"
           >
-            <Link
+            <a
               href={portfolioUrl}
               className="text-lg font-bold tracking-tight"
             >
               DB
-            </Link>
+            </a>
             <div className="flex items-center gap-6">
-              <Link
+              <a
                 href={portfolioUrl}
                 className="text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 &larr; Back to Portfolio
-              </Link>
+              </a>
             </div>
           </nav>
         </header>
+        <ThemeSync />
         {children}
       </body>
     </html>
