@@ -52,7 +52,11 @@ export async function resolveCards(
 
     const res = await fetch(`${SCRYFALL_API}/cards/collection`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "User-Agent": "MTGDecklistRecommendations/1.0",
+      },
       body: JSON.stringify({ identifiers }),
     });
 
