@@ -8,20 +8,19 @@ This is an AI-assisted side project — the entire codebase is built collaborati
 
 ## Architecture — Micro-Frontend Zone
 
-This app is deployed as an **independent micro-frontend** composed into a portfolio shell via [Vercel Microfrontends](https://vercel.com/docs/workflow-collaboration/microfrontends). Both projects belong to the same Vercel Microfrontends group — Vercel handles routing at the edge, no manual rewrites needed.
+This app is one of several **independent micro-frontends** composed into a portfolio shell via [Vercel Microfrontends](https://vercel.com/docs/workflow-collaboration/microfrontends). Each project MFE belongs to the same Vercel group — routing is handled at the edge with zero code changes to the shell.
 
 ```
 Portfolio Shell (dbedford.dev)
-├── /                  ← portfolio routes
-├── /blog/*            ← blog routes
-├── /projects/*        ← project write-ups
-└── /mtg-rag/*         ← routed to this app by Vercel
+├── /*                 ← shell routes (home, blog, projects)
+├── /mtg-rag/*         ← this app
+└── /future-project/*  ← next MFE follows the same pattern
 ```
 
-This pattern means:
-- **Independently deployable** — this app has its own CI/CD, env vars, and release cycle
+Each MFE is:
+- **Independently deployable** — own repo, CI/CD, env vars, and release cycle
 - **Self-contained** — all API routes, components, and state live in this repo
-- **Composable** — new project MFEs join the group with zero code changes to the shell
+- **Composable** — adding a new project MFE is just another Vercel group member
 
 The `basePath: '/mtg-rag'` in `next.config.ts` ensures all routes, assets, and API calls work correctly under the portfolio's path prefix.
 
