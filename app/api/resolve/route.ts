@@ -4,6 +4,7 @@ import { fetchArchidektDeck, ArchidektError } from "@/lib/archidekt";
 import { sanitizeDecklistInput } from "@/lib/validators";
 import { parseDecklistText, detectInputType } from "@/lib/decklist-parser";
 import { checkRateLimit, rateLimitResponse } from "@/lib/ratelimit";
+import { checkOrigin } from "@/lib/origin";
 import type { DeckEntry } from "@/lib/types";
 
 export const runtime = "edge";
@@ -13,6 +14,9 @@ interface ResolveRequest {
 }
 
 export async function POST(request: Request) {
+  const originError = checkOrigin(request);
+  if (originError) return originError;
+
   // Rate limit check
   const rl = await checkRateLimit(request);
   if (!rl.allowed) return rateLimitResponse(rl);

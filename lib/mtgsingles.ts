@@ -119,7 +119,15 @@ export async function lookupNzPrice(
 
     const store = String(it.store ?? "Unknown");
     const condition = String(it.condition ?? "NM").toUpperCase();
-    const url = String(it.url ?? "");
+    const rawUrl = String(it.url ?? "");
+
+    let url = "";
+    try {
+      const parsed = new URL(rawUrl);
+      if (parsed.protocol === "https:") url = rawUrl;
+    } catch {
+      // Invalid URL — skip
+    }
 
     if (!cheapest || priceNum < cheapest.priceNum) {
       cheapest = {

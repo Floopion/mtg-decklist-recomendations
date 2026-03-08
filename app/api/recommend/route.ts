@@ -5,6 +5,7 @@ import { sanitizeDecklistInput } from "@/lib/validators";
 import { parseDecklistText, detectInputType } from "@/lib/decklist-parser";
 import { getRecommendations } from "@/lib/gemini";
 import { checkRateLimit, rateLimitResponse } from "@/lib/ratelimit";
+import { checkOrigin } from "@/lib/origin";
 import { lookupNzPrice } from "@/lib/mtgsingles";
 import type {
   DeckEntry,
@@ -57,6 +58,9 @@ async function validateRecommendations(
 }
 
 export async function POST(request: Request) {
+  const originError = checkOrigin(request);
+  if (originError) return originError;
+
   // Rate limit check
   const rl = await checkRateLimit(request);
   if (!rl.allowed) return rateLimitResponse(rl);

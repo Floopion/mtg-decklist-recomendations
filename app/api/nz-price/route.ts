@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { lookupNzPrice } from "@/lib/mtgsingles";
 import { checkRateLimit, rateLimitResponse } from "@/lib/ratelimit";
+import { checkOrigin } from "@/lib/origin";
 
 interface NzPriceRequest {
   cardName: string;
 }
 
 export async function POST(request: Request) {
+  const originError = checkOrigin(request);
+  if (originError) return originError;
+
   const rl = await checkRateLimit(request);
   if (!rl.allowed) return rateLimitResponse(rl);
 
