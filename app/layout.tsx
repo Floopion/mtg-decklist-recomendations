@@ -27,10 +27,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" style={{ colorScheme: "light" }} suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background font-sans text-foreground antialiased`}
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var d=document.documentElement,t=localStorage.getItem("theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme:dark)").matches)){d.classList.add("dark");d.style.colorScheme="dark"}}catch(e){}})()`,
+          }}
+        />
         <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
           <nav
             aria-label="Primary navigation"
